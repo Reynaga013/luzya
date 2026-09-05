@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LuzYa — Precio de la luz por horas</title>
+<style>
+  :root{
+    --bg-canvas:#F1F0FB;
+    --text:#181428;
+    --text-soft:#4B4763;
+    --text-faint:#8B87A3;
+
+    --glass: rgba(255,255,255,0.5);
+    --glass-strong: rgba(255,255,255,0.7);
+    --glass-border: rgba(255,255,255,0.6);
+    --glass-sheen: rgba(255,255,255,0.45);
+    --shadow-glass: 0 8px 32px rgba(88,28,135,0.12);
+
+    --blob-a: rgba(139,92,246,0.30);
+    --blob-b: rgba(20,184,166,0.24);
+    --blob-c: rgba(236,72,153,0.18);
+
+    --accent:#8B5CF6;
+    --accent-ink:#ffffff;
+    --accent-tint: rgba(139,92,246,0.14);
+    --cheap:#0FBF95;
+    --cheap-bg: rgba(15,191,149,0.16);
+    --mid:#F5A623;
+    --mid-bg: rgba(245,166,35,0.16);
+    --pricey:#F43F5E;
+    --pricey-bg: rgba(244,63,94,0.14);
+
+    --radius-lg:26px; --radius-md:18px; --radius-sm:12px;
+    --ease: cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg-canvas:#0B0714;
+      --text:#F3F1FA;
+      --text-soft:#D8D4EC;
+      --text-faint:#9490B0;
+
+      --glass: rgba(255,255,255,0.07);
+      --glass-strong: rgba(255,255,255,0.13);
+      --glass-border: rgba(255,255,255,0.14);
+      --glass-sheen: rgba(255,255,255,0.08);
+      --shadow-glass: 0 8px 32px rgba(0,0,0,0.5);
+
+      --blob-a: rgba(167,139,250,0.38);
+      --blob-b: rgba(45,212,191,0.30);
+      --blob-c: rgba(244,114,182,0.22);
+
+      --accent:#A78BFA;
+      --accent-ink:#1a1030;
+      --accent-tint: rgba(167,139,250,0.20);
+      --cheap:#2DD4BF;
+      --cheap-bg: rgba(45,212,191,0.18);
+      --mid:#FBBF24;
+      --mid-bg: rgba(251,191,36,0.18);
+      --pricey:#FB7185;
+      --pricey-bg: rgba(251,113,133,0.18);
+    }
+  }
+
+  *{box-sizing:border-box;}
+  html{background:var(--bg-canvas);}
+  body{
+    margin:0;
+    background:var(--bg-canvas);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    position:relative;
+    overflow-x:hidden;
+  }
+
+  .bg-mesh{
+    position:fixed; inset:-10vh -10vw; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(38vmax 38vmax at 12% 8%, var(--blob-a), transparent 60%),
+      radial-gradient(42vmax 42vmax at 88% 18%, var(--blob-b), transparent 60%),
+      radial-gradient(46vmax 46vmax at 30% 92%, var(--blob-c), transparent 60%),
+      radial-gradient(30vmax 30vmax at 95% 90%, var(--blob-a), transparent 60%);
+    filter: blur(50px) saturate(140%);
+    animation: drift 40s ease-in-out infinite alternate;
+  }
+  @keyframes drift{
+    0%{transform:translate(0,0) scale(1);}
+    100%{transform:translate(-2vw,2vh) scale(1.08);}
+  }
+  @media (prefers-reduced-motion: reduce){ .bg-mesh{ animation:none; } }
+
+  .wrap{position:relative; z-index:1; max-width:600px;margin:0 auto;padding:16px 14px 118px;}
+
+  .glass{
+    background:var(--glass);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter: blur(24px) saturate(160%);
+    border:1px solid var(--glass-border);
+    box-shadow: var(--shadow-glass);
+    position:relative;
+  }
+  .glass::before{
+    content:"";
+    position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+    background:linear-gradient(155deg, var(--glass-sheen), transparent 45%);
+    mix-blend-mode:overlay;
+  }
+
+  header.glass{
+    position:sticky; top:10px; z-index:20;
+    border-radius:var(--radius-lg);
+    padding:14px 16px;
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:12px;
+  }
+  header h1{font-size:19px;margin:0;display:flex;align-items:center;gap:8px;font-weight:750;letter-spacing:-0.01em;}
+
+  .icon-btn{
+    width:38px;height:38px;border-radius:50%;
+    background:var(--glass-strong);
+    border:1px solid var(--glass-border);
+    color:var(--accent);
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;cursor:pointer;
+    transition:transform 0.25s var(--ease), opacity 0.2s;
+  }
+  .icon-btn:active{transform:scale(0.88);}
+  .icon-btn.spinning .ic{animation:spin 0.9s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .meta-row{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:12px;color:var(--text-faint);margin:0 4px 12px;
+  }
+
+  .segmented{
+    display:flex;background:var(--glass-strong);border:1px solid var(--glass-border);
+    border-radius:999px;padding:3px;margin-bottom:14px;
+  }
+  .segment{
+    flex:1;text-align:center;padding:9px 6px;border:none;background:transparent;
+    border-radius:999px;font-size:13.5px;font-weight:650;color:var(--text-soft);
+    cursor:pointer;transition:background 0.25s var(--ease), color 0.25s;
+  }
+  .segment.active{background:var(--accent);color:var(--accent-ink);}
+
+  .panel{border-radius:var(--radius-lg);padding:18px;margin-bottom:14px;}
+
+  /* ---- hero price card ---- */
+  .hero{
+    text-align:center;padding:22px 18px;
+  }
+  .hero .label{font-size:13px;color:var(--text-faint);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;}
+  .hero .price{
+    font-size:44px;font-weight:800;letter-spacing:-0.02em;margin:6px 0 2px;
+    font-variant-numeric:tabular-nums;
+  }
+  .hero .price small{font-size:18px;font-weight:650;color:var(--text-faint);}
+  .hero .tag{
+    display:inline-block;margin-top:8px;padding:5px 14px;border-radius:999px;
+    font-size:13px;font-weight:700;
+  }
+  .tag.cheap{background:var(--cheap-bg);color:var(--cheap);}
+  .tag.mid{background:var(--mid-bg);color:var(--mid);}
+  .tag.pricey{background:var(--pricey-bg);color:var(--pricey);}
+
+  /* ---- 24h bar chart ---- */
+  .chart-title{font-size:14px;font-weight:700;margin:0 0 12px;color:var(--text-soft);}
+  .bars{
+    display:flex;align-items:flex-end;gap:3px;height:130px;
+    position:relative;
+  }
+  .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;}
+  .bar{
+    width:100%;border-radius:4px 4px 2px 2px;min-height:6px;
+    transition:height 0.4s var(--ease), filter 0.15s var(--ease);
+    cursor:pointer; touch-action:pan-y;
+  }
+  .bar.cheap{background:var(--cheap);}
+  .bar.mid{background:var(--mid);}
+  .bar.pricey{background:var(--pricey);}
+  .bar-col.now .bar{box-shadow:0 0 0 2px var(--accent), 0 0 0 4px var(--glass-strong);}
+  .bar-hour{font-size:8.5px;color:var(--text-faint);margin-top:5px;font-variant-numeric:tabular-nums;}
+  .bar-col:not(.show-hour) .bar-hour{visibility:hidden;}
+
+  .bar.active, .hist-bar.active{
+    filter:brightness(1.3);
+    box-shadow:0 0 0 2px rgba(255,255,255,0.55);
+  }
+
+  .chart-tooltip{
+    position:absolute; z-index:5; left:0; top:0; pointer-events:none;
+    transform:translate(-50%,calc(-100% - 8px));
+    background:var(--glass-strong); backdrop-filter:blur(16px) saturate(160%);
+    -webkit-backdrop-filter:blur(16px) saturate(160%);
+    border:1px solid var(--glass-border); border-radius:8px;
+    padding:5px 10px; font-size:12.5px; font-weight:750; color:var(--text);
+    white-space:nowrap; box-shadow:0 6px 16px rgba(0,0,0,0.3);
+    opacity:0; transition:opacity 0.12s var(--ease); font-variant-numeric:tabular-nums;
+  }
+  .chart-tooltip.show{opacity:1;}
+
+  .summary-row{display:flex;gap:10px;margin-top:14px;}
+  .summary-card{
+    flex:1;border-radius:var(--radius-sm);padding:11px 12px;
+    background:var(--glass-strong);border:1px solid var(--glass-border);
+  }
+  .summary-card .k{font-size:11px;color:var(--text-faint);font-weight:650;margin-bottom:3px;}
+  .summary-card .v{font-size:14px;font-weight:750;font-variant-numeric:tabular-nums;}
+  .summary-card.cheap .v{color:var(--cheap);}
+  .summary-card.pricey .v{color:var(--pricey);}
+
+  .section-label{font-size:15px;font-weight:750;margin:0 4px 10px;display:flex;align-items:center;gap:6px;}
+
+  .tomorrow-hint{
+    text-align:center;padding:16px;color:var(--text-faint);font-size:13.5px;
+  }
+
+  /* ---- historical chart ---- */
+  .hist-chart{height:170px;display:flex;align-items:flex-end;gap:2px;position:relative;}
+  .hist-col{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;}
+  .hist-bar{
+    width:100%;border-radius:3px 3px 1px 1px;min-height:4px;background:var(--accent);
+    transition:height 0.4s var(--ease), filter 0.15s var(--ease);
+    cursor:pointer; touch-action:pan-y;
+  }
+  .hist-label{font-size:8px;color:var(--text-faint);margin-top:4px;white-space:nowrap;overflow:visible;}
+
+  .empty, .loading, .error-msg{
+    text-align:center;padding:40px 20px;color:var(--text-faint);font-size:14.5px;line-height:1.5;
+  }
+  .error-msg{color:var(--pricey);}
+  .spinner{
+    width:34px;height:34px;border-radius:50%;
+    border:3px solid var(--glass-border); border-top-color:var(--accent);
+    margin:0 auto 14px; animation:spin 0.8s linear infinite;
+  }
+
+  .note{font-size:12px;color:var(--text-faint);text-align:center;line-height:1.5;margin-top:6px;padding:0 10px;}
+
+  /* ---- floating tab bar ---- */
+  .tabbar{
+    position:fixed; left:14px; right:14px; bottom:14px; z-index:30;
+    border-radius:24px; padding:8px;
+  }
+  .tabbar-inner{display:flex;gap:4px;}
+  .tab-item{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+    padding:8px 4px;border-radius:18px;background:transparent;border:none;
+    color:var(--text-faint);font-size:11px;font-weight:650;cursor:pointer;
+    transition:background 0.25s var(--ease), color 0.25s;
+  }
+  .tab-item.active{color:var(--accent);background:var(--accent-tint);}
+  .tab-item .ic{font-size:19px;line-height:1;}
+  .tabview{display:none;}
+  .tabview.active{display:block;}
+
+  ::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body>
+<div class="bg-mesh" aria-hidden="true"></div>
+<div class="wrap">
+
+  <header class="glass">
+    <h1><span>⚡</span> LuzYa</h1>
+    <button class="icon-btn" id="refreshBtn" title="Actualizar precios">
+      <span class="ic">↻</span>
+    </button>
+  </header>
+
+  <div class="meta-row">
+    <span id="lastUpdated">Sin datos cargados todavía</span>
+    <span id="scopeNote">Península</span>
+  </div>
+
+  <!-- HOY -->
+  <div class="tabview active" id="view-hoy">
+    <div id="hoyContent">
+      <div class="loading"><div class="spinner"></div>Cargando precios de hoy…</div>
+    </div>
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div class="tabview" id="view-historico">
+    <div class="segmented" id="histRange">
+      <button class="segment active" data-days="7">7 días</button>
+      <button class="segment" data-days="30">30 días</button>
+      <button class="segment" data-days="90">3 meses</button>
+    </div>
+    <div id="histContent">
+      <div class="loading"><div class="spinner"></div>Cargando histórico…</div>
+    </div>
+  </div>
+
+  <p class="note">
+    Datos oficiales de Red Eléctrica de España (PVPC, mercado peninsular),
+    actualizados a diario. Ceuta, Melilla, Baleares y Canarias no están
+    incluidas — tienen sistemas de precio distintos. El PVPC es igual para
+    toda la península si tu tarifa es regulada, sea cual sea tu
+    comercializadora — pero no aplica si tienes un contrato de precio fijo
+    o indexado propio de una compañía (mercado libre).
+  </p>
+
+</div>
+
+<div class="tabbar glass">
+  <div class="tabbar-inner">
+    <button class="tab-item active" data-tab="hoy">
+      <span class="ic">⚡</span><span>Hoy</span>
+    </button>
+    <button class="tab-item" data-tab="historico">
+      <span class="ic">📊</span><span>Histórico</span>
+    </button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var REE_BASE = "https://apidatos.ree.es/es/datos/mercados/precios-mercados-tiempo-real";
+
+  var state = {
+    tab: "hoy",
+    today: null,       // array of {datetime, eurKWh, percentage}
+    tomorrow: null,     // same shape, or null if not published yet
+    histDays: 7,
+    histCache: {}      // days -> array
+  };
+
+  // ---------- helpers ----------
+  function pad(n){ return n < 10 ? "0" + n : "" + n; }
+  function fmtDate(d){ return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()); }
+  function addDays(d, n){ var r = new Date(d); r.setDate(r.getDate() + n); return r; }
+  function hourOf(iso){ return parseInt(iso.substring(11,13), 10); }
+  function dayOf(iso){ return iso.substring(0,10); }
+  function tierOf(pct){
+    if(pct == null) return "mid";
+    if(pct < 0.34) return "cheap";
+    if(pct < 0.67) return "mid";
+    return "pricey";
+  }
+  function tierLabel(tier){
+    return tier === "cheap" ? "Precio bajo ahora" : tier === "pricey" ? "Precio alto ahora" : "Precio medio ahora";
+  }
+  function fmtPrice(eurKWh){ return eurKWh.toFixed(3).replace(".", ","); }
+  function fmtHour(h){ return pad(h) + ":00"; }
+
+  // Abre una URL externa con un <a> real en vez de window.open() — lección
+  // de GasoYa: window.open() desde JS falla (pestaña en blanco) en una app
+  // instalada en pantalla de inicio de iOS (modo standalone).
+  function openExternal(url){
+    var a = document.createElement("a");
+    a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+
+  // ---------- data fetching ----------
+  function fetchRange(startDate, endDate){
+    var url = REE_BASE + "?start_date=" + fmtDate(startDate) + "T00:00&end_date=" + fmtDate(endDate) + "T23:59&time_trunc=hour";
+    return fetch(url, { headers: { "Accept": "application/json" } })
+      .then(function(res){
+        if(!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function(data){
+        var pvpc = (data.included || []).filter(function(s){ return s.type === "PVPC"; })[0];
+        if(!pvpc) throw new Error("Sin datos PVPC en la respuesta");
+        // Filtra horas sin valor todavía publicado (p. ej. "mañana" antes de
+        // que REE publique los precios, sobre las 20:30h) — sin esto, un
+        // valor null se convertiría en 0 €/kWh en vez de desaparecer.
+        return pvpc.attributes.values
+          .filter(function(v){ return typeof v.value === "number" && isFinite(v.value); })
+          .map(function(v){
+            return { datetime: v.datetime, eurKWh: v.value / 1000, percentage: v.percentage };
+          });
+      });
+  }
+
+  // El endpoint de REE solo admite ~31 días por petición con time_trunc=hour
+  // (comprobado a mano) — para rangos más largos, se trocea en bloques de
+  // 28 días y se piden EN SECUENCIA (no en paralelo) para no disparar el
+  // limitador de peticiones del proveedor.
+  function fetchRangeChunked(startDate, endDate){
+    var chunks = [];
+    var cur = new Date(startDate);
+    while(cur <= endDate){
+      var chunkEnd = addDays(cur, 27);
+      if(chunkEnd > endDate) chunkEnd = new Date(endDate);
+      chunks.push([new Date(cur), new Date(chunkEnd)]);
+      cur = addDays(chunkEnd, 1);
+    }
+    var results = [];
+    return chunks.reduce(function(p, chunk){
+      return p.then(function(){
+        return fetchRange(chunk[0], chunk[1]).then(function(part){
+          results = results.concat(part);
+        });
+      });
+    }, Promise.resolve()).then(function(){ return results; });
+  }
+
+  // ---------- render: HOY ----------
+  function dayBlock(title, values, isToday){
+    if(!values || !values.length) return "";
+
+    var now = new Date();
+    var nowHour = now.getHours();
+    var todayStr = fmtDate(now);
+
+    var cheapest = values[0], priciest = values[0];
+    values.forEach(function(v){
+      if(v.eurKWh < cheapest.eurKWh) cheapest = v;
+      if(v.eurKWh > priciest.eurKWh) priciest = v;
+    });
+
+    var currentEntry = null;
+    if(isToday){
+      currentEntry = values.filter(function(v){
+        return dayOf(v.datetime) === todayStr && hourOf(v.datetime) === nowHour;
+      })[0];
+    }
+
+    var heroHtml = "";
+    if(currentEntry){
+      var tier = tierOf(currentEntry.percentage);
+      heroHtml =
+        '<div class="panel glass hero">' +
+          '<div class="label">Ahora mismo · ' + fmtHour(nowHour) + '</div>' +
+          '<div class="price">' + fmtPrice(currentEntry.eurKWh) + ' <small>€/kWh</small></div>' +
+          '<span class="tag ' + tier + '">' + tierLabel(tier) + '</span>' +
+        '</div>';
+    }
+
+    var barsHtml = values.map(function(v, i){
+      var h = hourOf(v.datetime);
+      var tier = tierOf(v.percentage);
+      var heightPct = Math.round(20 + 80 * Math.max(0, Math.min(1, v.percentage != null ? v.percentage : 0.5)));
+      var isNow = isToday && dayOf(v.datetime) === todayStr && h === nowHour;
+      var showHour = (h % 3 === 0);
+      return '<div class="bar-col' + (isNow ? ' now' : '') + (showHour ? ' show-hour' : '') + '">' +
+        '<div class="bar ' + tier + '" style="height:' + heightPct + '%" data-tip="' + fmtHour(h) + ' · ' + fmtPrice(v.eurKWh) + ' €/kWh"></div>' +
+        '<div class="bar-hour">' + h + '</div>' +
+      '</div>';
+    }).join("");
+
+    return heroHtml +
+      '<div class="panel glass">' +
+        '<div class="chart-title">' + title + ' por horas</div>' +
+        '<div class="bars">' + barsHtml + '</div>' +
+        '<div class="summary-row">' +
+          '<div class="summary-card cheap"><div class="k">Más barato</div><div class="v">' + fmtHour(hourOf(cheapest.datetime)) + ' · ' + fmtPrice(cheapest.eurKWh) + ' €</div></div>' +
+          '<div class="summary-card pricey"><div class="k">Más caro</div><div class="v">' + fmtHour(hourOf(priciest.datetime)) + ' · ' + fmtPrice(priciest.eurKWh) + ' €</div></div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function renderHoy(){
+    var el = document.getElementById("hoyContent");
+    var html = '<div class="section-label">⚡ Hoy</div>' + dayBlock("Hoy", state.today, true);
+    if(state.tomorrow && state.tomorrow.length){
+      html += '<div class="section-label" style="margin-top:18px;">🌙 Mañana</div>' + dayBlock("Mañana", state.tomorrow, false);
+    } else {
+      html += '<div class="panel glass tomorrow-hint">Los precios de mañana se publican sobre las 20:30h — vuelve a mirar más tarde.</div>';
+    }
+    el.innerHTML = html;
+  }
+
+  function loadHoy(){
+    var el = document.getElementById("hoyContent");
+    el.innerHTML = '<div class="loading"><div class="spinner"></div>Cargando precios de hoy…</div>';
+
+    var today = new Date();
+    var tomorrow = addDays(today, 1);
+
+    fetchRange(today, tomorrow)
+      .then(function(values){
+        var todayStr = fmtDate(today);
+        var tomorrowStr = fmtDate(tomorrow);
+        state.today = values.filter(function(v){ return dayOf(v.datetime) === todayStr; });
+        state.tomorrow = values.filter(function(v){ return dayOf(v.datetime) === tomorrowStr; });
+        document.getElementById("lastUpdated").textContent =
+          "Actualizado " + new Date().toLocaleTimeString("es-ES", {hour:"2-digit", minute:"2-digit"});
+        renderHoy();
+      })
+      .catch(function(err){
+        el.innerHTML = '<div class="panel glass error-msg">No se pudieron cargar los precios (' + err.message + '). Toca actualizar para reintentar.</div>';
+      });
+  }
+
+  // ---------- render: HISTÓRICO ----------
+  function renderHistorico(){
+    var el = document.getElementById("histContent");
+    var values = state.histCache[state.histDays];
+    if(!values){
+      el.innerHTML = '<div class="loading"><div class="spinner"></div>Cargando histórico (puede tardar unos segundos)…</div>';
+      return;
+    }
+    if(!values.length){
+      el.innerHTML = '<div class="panel glass empty">Sin datos para este periodo.</div>';
+      return;
+    }
+
+    // media diaria a partir de los valores por hora
+    var byDay = {};
+    values.forEach(function(v){
+      var d = dayOf(v.datetime);
+      if(!byDay[d]) byDay[d] = [];
+      byDay[d].push(v.eurKWh);
+    });
+    var days = Object.keys(byDay).sort();
+    var avgs = days.map(function(d){
+      var arr = byDay[d];
+      var sum = arr.reduce(function(a,b){ return a+b; }, 0);
+      return { day: d, avg: sum / arr.length };
+    });
+
+    var min = Math.min.apply(null, avgs.map(function(a){ return a.avg; }));
+    var max = Math.max.apply(null, avgs.map(function(a){ return a.avg; }));
+    var range = (max - min) || 1;
+
+    var showEveryNth = Math.ceil(avgs.length / 10);
+
+    var barsHtml = avgs.map(function(a, i){
+      var pct = (a.avg - min) / range;
+      var heightPct = Math.round(15 + 85 * pct);
+      var tier = tierOf(pct);
+      var d = new Date(a.day + "T00:00:00");
+      var label = pad(d.getDate()) + "/" + pad(d.getMonth()+1);
+      var showLabel = (i % showEveryNth === 0);
+      return '<div class="hist-col">' +
+        '<div class="hist-bar" style="height:' + heightPct + '%;background:var(--' + (tier === "cheap" ? "cheap" : tier === "pricey" ? "pricey" : "mid") + ')" data-tip="' + label + ' · ' + fmtPrice(a.avg) + ' €/kWh"></div>' +
+        '<div class="hist-label"' + (showLabel ? '' : ' style="visibility:hidden"') + '>' + label + '</div>' +
+      '</div>';
+    }).join("");
+
+    var overallAvg = avgs.reduce(function(s,a){ return s + a.avg; }, 0) / avgs.length;
+
+    el.innerHTML =
+      '<div class="panel glass">' +
+        '<div class="chart-title">Media diaria (€/kWh)</div>' +
+        '<div class="hist-chart">' + barsHtml + '</div>' +
+        '<div class="summary-row">' +
+          '<div class="summary-card"><div class="k">Media del periodo</div><div class="v">' + fmtPrice(overallAvg) + ' €/kWh</div></div>' +
+          '<div class="summary-card cheap"><div class="k">Día más barato</div><div class="v">' + fmtPrice(min) + ' €/kWh</div></div>' +
+          '<div class="summary-card pricey"><div class="k">Día más caro</div><div class="v">' + fmtPrice(max) + ' €/kWh</div></div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function loadHistorico(days){
+    state.histDays = days;
+    if(state.histCache[days]){ renderHistorico(); return; }
+    renderHistorico(); // muestra el loading
+
+    var end = new Date();
+    var start = addDays(end, -days);
+
+    fetchRangeChunked(start, end)
+      .then(function(values){
+        state.histCache[days] = values;
+        renderHistorico();
+      })
+      .catch(function(err){
+        document.getElementById("histContent").innerHTML =
+          '<div class="panel glass error-msg">No se pudo cargar el histórico (' + err.message + '). Toca 7/30 días de nuevo para reintentar.</div>';
+      });
+  }
+
+  // ---------- tabs ----------
+  document.querySelectorAll(".tab-item").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      document.querySelectorAll(".tab-item").forEach(function(b){ b.classList.remove("active"); });
+      document.querySelectorAll(".tabview").forEach(function(v){ v.classList.remove("active"); });
+      btn.classList.add("active");
+      var tab = btn.getAttribute("data-tab");
+      document.getElementById("view-" + tab).classList.add("active");
+      state.tab = tab;
+      if(tab === "historico" && !state.histCache[state.histDays]){
+        loadHistorico(state.histDays);
+      }
+    });
+  });
+
+  document.querySelectorAll("#histRange .segment").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      document.querySelectorAll("#histRange .segment").forEach(function(b){ b.classList.remove("active"); });
+      btn.classList.add("active");
+      loadHistorico(parseInt(btn.getAttribute("data-days"), 10));
+    });
+  });
+
+  // ---------- chart tooltip (hover con ratón / toque en móvil) ----------
+  // Delegado en document porque las barras se regeneran por completo
+  // (innerHTML) cada vez que se pintan — un listener puesto directamente
+  // en cada barra se perdería en el siguiente render.
+  var activeBar = null;
+
+  function barContainer(el){ return el.closest(".bars, .hist-chart"); }
+
+  function positionTooltip(bar, container){
+    var tip = container.querySelector(".chart-tooltip");
+    if(!tip){
+      tip = document.createElement("div");
+      tip.className = "chart-tooltip";
+      container.appendChild(tip);
+    }
+    tip.textContent = bar.getAttribute("data-tip") || "";
+    var barRect = bar.getBoundingClientRect();
+    var contRect = container.getBoundingClientRect();
+    var left = barRect.left - contRect.left + barRect.width / 2;
+    var tipWidth = tip.offsetWidth || 60;
+    var minLeft = tipWidth / 2 + 2;
+    var maxLeft = contRect.width - tipWidth / 2 - 2;
+    left = Math.max(minLeft, Math.min(left, maxLeft));
+    tip.style.left = left + "px";
+    // el tooltip se dibuja por encima del punto "top" (transform hacia
+    // arriba) — si la barra es muy alta, hay que evitar que se salga por
+    // encima del propio gráfico y tape el título del panel.
+    var tipHeight = tip.offsetHeight || 26;
+    var top = Math.max(barRect.top - contRect.top, tipHeight + 8);
+    tip.style.top = top + "px";
+    tip.classList.add("show");
+  }
+
+  function selectBar(bar){
+    if(!bar || !bar.hasAttribute("data-tip")) return;
+    var container = barContainer(bar);
+    if(!container) return;
+    if(activeBar && activeBar !== bar) activeBar.classList.remove("active");
+    bar.classList.add("active");
+    activeBar = bar;
+    positionTooltip(bar, container);
+  }
+
+  function clearSelection(){
+    if(activeBar){
+      activeBar.classList.remove("active");
+      var container = barContainer(activeBar);
+      if(container){
+        var tip = container.querySelector(".chart-tooltip");
+        if(tip) tip.classList.remove("show");
+      }
+      activeBar = null;
+    }
+  }
+
+  function isBarEl(el){
+    return !!(el && el.classList && (el.classList.contains("bar") || el.classList.contains("hist-bar")));
+  }
+
+  // ratón: la barra bajo el cursor se resalta al pasar por encima, y deja
+  // de resaltarse al salir (comportamiento típico de "hover").
+  document.addEventListener("pointerover", function(e){
+    if(e.pointerType && e.pointerType !== "mouse") return;
+    if(isBarEl(e.target)) selectBar(e.target);
+  });
+  document.addEventListener("pointerout", function(e){
+    if(e.pointerType && e.pointerType !== "mouse") return;
+    if(isBarEl(e.target) && !isBarEl(e.relatedTarget)) clearSelection();
+  });
+
+  // móvil (dedo): al tocar o arrastrar el dedo por el gráfico se va
+  // resaltando la barra tocada; se queda marcada hasta tocar fuera.
+  document.addEventListener("touchstart", function(e){
+    var t = e.touches[0];
+    var el = document.elementFromPoint(t.clientX, t.clientY);
+    if(isBarEl(el)) selectBar(el);
+  }, { passive: true });
+  document.addEventListener("touchmove", function(e){
+    if(!activeBar) return;
+    var t = e.touches[0];
+    var el = document.elementFromPoint(t.clientX, t.clientY);
+    if(isBarEl(el) && el !== activeBar) selectBar(el);
+  }, { passive: true });
+
+  // click (ratón o toque simple): selecciona/deselecciona la barra.
+  document.addEventListener("click", function(e){
+    if(isBarEl(e.target)){
+      selectBar(e.target);
+    } else if(!e.target.closest(".chart-tooltip")){
+      clearSelection();
+    }
+  });
+
+  // ---------- refresh ----------
+  var refreshBtn = document.getElementById("refreshBtn");
+  refreshBtn.addEventListener("click", function(){
+    refreshBtn.classList.add("spinning");
+    state.histCache = {};
+    Promise.resolve()
+      .then(function(){ return loadHoy(); })
+      .then(function(){
+        if(state.tab === "historico") loadHistorico(state.histDays);
+      })
+      .then(function(){ refreshBtn.classList.remove("spinning"); })
+      .catch(function(){ refreshBtn.classList.remove("spinning"); });
+  });
+
+  // ---------- init ----------
+  loadHoy();
+})();
+</script>
+</body>
+</html>
