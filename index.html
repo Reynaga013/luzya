@@ -2,8 +2,21 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>LuzYa — Precio de la luz por horas</title>
+
+<!-- Icono / "Añadir a pantalla de inicio" -->
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#8B5CF6">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LuzYa">
+
 <style>
   :root{
     --bg-canvas:#F1F0FB;
@@ -92,7 +105,7 @@
   }
   @media (prefers-reduced-motion: reduce){ .bg-mesh{ animation:none; } }
 
-  .wrap{position:relative; z-index:1; max-width:600px;margin:0 auto;padding:16px 14px 118px;}
+  .wrap{position:relative; z-index:1; max-width:600px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 14px 118px;}
 
   .glass{
     background:var(--glass);
@@ -243,7 +256,7 @@
 
   /* ---- floating tab bar ---- */
   .tabbar{
-    position:fixed; left:14px; right:14px; bottom:14px; z-index:30;
+    position:fixed; left:14px; right:14px; bottom:calc(14px + env(safe-area-inset-bottom)); z-index:30;
     border-radius:24px; padding:8px;
   }
   .tabbar-inner{display:flex;gap:4px;}
