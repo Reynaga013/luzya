@@ -431,6 +431,22 @@
       if(v.eurKWh > priciest.eurKWh) priciest = v;
     });
 
+    // Posición relativa (0-1) del precio DENTRO DE ESTE BLOQUE (solo "hoy" o
+    // solo "mañana"), calculada a mano en vez de usar el campo `percentage`
+    // que devuelve REE. Motivo: `fetchRange()` pide hoy+mañana en una sola
+    // petición (ver loadHoy), así que el `percentage` que REE calcula viene
+    // referido al rango de 48h combinado, no al día suelto — con eso, la
+    // altura/color de una barra podía no corresponder con el propio precio
+    // de esa hora frente al mínimo/máximo DE ESE DÍA (los mismos que se
+    // muestran en "Más barato"/"Más caro" un poco más abajo). Bug real
+    // reportado por el usuario ("miden lo mismo pero el número es bastante
+    // distinto") — recalcular en local garantiza que la barra más alta y la
+    // etiqueta "Más caro" sean siempre la misma hora, y viceversa.
+    var rango = priciest.eurKWh - cheapest.eurKWh;
+    function localPct(v){
+      return rango > 0 ? (v.eurKWh - cheapest.eurKWh) / rango : 0.5;
+    }
+
     var currentEntry = null;
     if(isToday){
       currentEntry = values.filter(function(v){
@@ -440,7 +456,7 @@
 
     var heroHtml = "";
     if(currentEntry){
-      var tier = tierOf(currentEntry.percentage);
+      var tier = tierOf(localPct(currentEntry));
       heroHtml =
         '<div class="panel glass hero">' +
           '<div class="label">Ahora mismo · ' + fmtHour(nowHour) + '</div>' +
@@ -451,8 +467,11 @@
 
     var barsHtml = values.map(function(v, i){
       var h = hourOf(v.datetime);
-      var tier = tierOf(v.percentage);
-      var heightPct = Math.round(20 + 80 * Math.max(0, Math.min(1, v.percentage != null ? v.percentage : 0.5)));
+      var pct = localPct(v);
+      var tier = tierOf(pct);
+      // Suelo del 6% (no 0%) para que la hora más barata del día siga
+      // dando una barra visible/tocable en vez de desaparecer del todo.
+      var heightPct = Math.round(6 + 94 * Math.max(0, Math.min(1, pct)));
       var isNow = isToday && dayOf(v.datetime) === todayStr && h === nowHour;
       var showHour = (h % 3 === 0);
       return '<div class="bar-col' + (isNow ? ' now' : '') + (showHour ? ' show-hour' : '') + '">' +
