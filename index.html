@@ -717,6 +717,55 @@
   // ---------- init ----------
   loadHoy();
 })();
+
+  /* ---------- registro de uso (panel privado) -------------------------
+   * Manda un aviso al panel de uso con un identificador ALEATORIO generado
+   * en este navegador. No hay cuenta, ni nombre, ni correo, ni cookie de
+   * terceros: solo sirve para contar cuantos navegadores distintos abren la
+   * app y cada cuanto. Si el usuario borra los datos del navegador, vuelve a
+   * contar como un dispositivo nuevo, y ya esta.
+   * Si el aviso falla (sin red, funcion caida) la app no se entera.
+   * ------------------------------------------------------------------- */
+  (function(){
+    var APP = 'luzya';
+    var URL_PING = 'https://europe-west1-peluqueria-agenda-e4170.cloudfunctions.net/ping';
+    var VENTANA_MIN = 15;
+
+    function idDispositivo(){
+      try {
+        var id = localStorage.getItem('panel.id');
+        if(!id){
+          id = (crypto.randomUUID && crypto.randomUUID()) ||
+            '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, function(c){
+              return (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c/4)))).toString(16);
+            });
+          localStorage.setItem('panel.id', id);
+        }
+        return id;
+      } catch(e){ return null; }   // navegacion privada: esta visita no se cuenta
+    }
+
+    function avisar(){
+      var id = idDispositivo();
+      if(!id) return;
+      try {
+        var ultimo = Number(localStorage.getItem('panel.ping') || 0);
+        if(Date.now() - ultimo < VENTANA_MIN*60000) return;
+        localStorage.setItem('panel.ping', String(Date.now()));
+      } catch(e){}
+      fetch(URL_PING, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({app: APP, id: id}),
+        keepalive: true
+      }).catch(function(){});
+    }
+
+    avisar();
+    document.addEventListener('visibilitychange', function(){
+      if(document.visibilityState === 'visible') avisar();
+    });
+  })();
 </script>
 </body>
 </html>
