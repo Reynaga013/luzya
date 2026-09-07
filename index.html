@@ -272,6 +272,30 @@
   .tabview.active{display:block;}
 
   ::-webkit-scrollbar{display:none;}
+
+  /* ---- tarjeta de otra app propia (ver el <script> del final) ---- */
+  .otra-app{
+    display:none; align-items:flex-start; gap:12px;
+    border-radius:var(--radius-lg, 20px); padding:14px 16px; margin:18px 0 4px;
+  }
+  .otra-app.visible{ display:flex; }
+  .otra-app .oa-icono{
+    width:38px; height:38px; border-radius:10px; flex:none;
+    display:grid; place-items:center; font-size:20px;
+    background:var(--accent-tint);
+  }
+  .otra-app .oa-cuerpo{ flex:1 1 auto; min-width:0; }
+  .otra-app .oa-titulo{ font-weight:650; font-size:15px; margin-bottom:2px; }
+  .otra-app .oa-texto{ font-size:13.5px; line-height:1.45; color:var(--text-soft); }
+  .otra-app .oa-enlace{
+    display:inline-block; margin-top:8px; font-size:13.5px; font-weight:600;
+    color:var(--accent); text-decoration:none;
+  }
+  .otra-app .oa-cerrar{
+    flex:none; background:none; border:0; cursor:pointer; padding:2px 4px;
+    font-size:17px; line-height:1; color:var(--text-faint); border-radius:6px;
+  }
+  .otra-app .oa-cerrar:hover{ color:var(--text-dim, var(--text-soft)); }
 </style>
 </head>
 <body>
@@ -309,6 +333,17 @@
     </div>
   </div>
 
+
+  <aside class="otra-app glass" id="otraApp" hidden>
+    <div class="oa-icono">&#128176;</div>
+    <div class="oa-cuerpo">
+      <div class="oa-titulo">Neto</div>
+      <div class="oa-texto">Si vigilas la luz para que no se te dispare la factura, esto hace lo mismo con el resto. Otra app m&iacute;a: cuentas, presupuestos y ahorro, sin conectar el banco y sin pagar nada.</div>
+      <a class="oa-enlace" href="https://reynaga013.github.io/mis-cuentas/"
+         target="_blank" rel="noopener">Echarle un vistazo &rarr;</a>
+    </div>
+    <button class="oa-cerrar" id="oaCerrar" type="button" aria-label="No mostrar esto">&times;</button>
+  </aside>
   <p class="note">
     Datos oficiales de Red Eléctrica de España (PVPC, mercado peninsular),
     actualizados a diario. Ceuta, Melilla, Baleares y Canarias no están
@@ -783,6 +818,31 @@
     avisar();
     document.addEventListener('visibilitychange', function(){
       if(document.visibilityState === 'visible') avisar();
+    });
+  })();
+
+  /* ---------- tarjeta de otra app propia ------------------------------
+   * Aparece a partir de la SEGUNDA visita, no en la primera: a quien acaba
+   * de llegar se le enseña la app, no otra cosa. Se cierra para siempre con
+   * la X. Sin seguimiento, sin red: solo un contador en este navegador.
+   * ------------------------------------------------------------------- */
+  (function(){
+    var caja = document.getElementById('otraApp');
+    var cerrar = document.getElementById('oaCerrar');
+    if(!caja || !cerrar) return;
+    var visitas = 0, oculta = false;
+    try {
+      oculta = localStorage.getItem('otraApp.oculta') === '1';
+      visitas = Number(localStorage.getItem('otraApp.visitas') || 0) + 1;
+      localStorage.setItem('otraApp.visitas', String(visitas));
+    } catch(e){ return; }          // navegacion privada: no se ensena nada
+    if(oculta || visitas < 2) return;
+    caja.hidden = false;
+    caja.classList.add('visible');
+    cerrar.addEventListener('click', function(){
+      caja.classList.remove('visible');
+      caja.hidden = true;
+      try { localStorage.setItem('otraApp.oculta', '1'); } catch(e){}
     });
   })();
 </script>
