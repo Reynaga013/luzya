@@ -1,0 +1,41 @@
+/* UI común v1: gestos móviles y arranques breves, sin bloquear la app. */
+html, body { touch-action: pan-x pan-y; }
+@media (max-width: 760px) {
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]), select, textarea { font-size: max(16px,1em) !important; }
+}
+.app-launch {
+  position: fixed; inset: 0; z-index: 2147483000; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 23px; pointer-events: none;
+  background: var(--launch-bg); color: var(--launch-ink); padding: env(safe-area-inset-top) 24px env(safe-area-inset-bottom);
+  transition: opacity .22s ease, visibility .22s; contain: layout paint;
+}
+.app-launch.is-leaving { opacity: 0; visibility: hidden; }
+.app-launch-symbol { position: relative; width: 112px; height: 112px; color: var(--launch-accent); animation: launch-arrive .65s cubic-bezier(.2,.8,.2,1) both; }
+.app-launch-symbol svg { width: 100%; height: 100%; overflow: visible; }
+.app-launch-symbol path, .app-launch-symbol polyline { stroke-dasharray: 300; stroke-dashoffset: 300; animation: launch-draw .75s ease forwards; }
+.app-launch-name { font: 760 30px/1.1 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; letter-spacing: -.055em; animation: launch-name .5s .12s both; }
+.app-launch-name span { color: var(--launch-accent); }
+.launch-pulso .app-launch-symbol { width: 156px; animation: launch-heartbeat .85s ease both; }
+.launch-radar .launch-sweep { transform-origin: 56px 56px; animation: launch-scan .95s ease both; stroke-dasharray: none; }
+.launch-luzya .launch-rays { transform-origin: 56px 56px; animation: launch-sun .95s ease both; }
+.launch-neto .app-launch-symbol { animation: launch-coin .85s cubic-bezier(.2,.8,.2,1) both; }
+.launch-gasoya .launch-route { stroke-dasharray: 140; animation: launch-draw .85s ease both; }
+.launch-celaje .launch-check, .launch-calendario .launch-check { animation-delay: .3s; }
+.launch-panel .launch-bar { transform-box: fill-box; transform-origin: bottom; animation: launch-bar .6s cubic-bezier(.2,.8,.2,1) both; }
+.launch-panel .launch-bar:nth-child(2) { animation-delay: .12s; }
+.launch-panel .launch-bar:nth-child(3) { animation-delay: .22s; }
+.launch-ayudaya .launch-spark { transform-origin: 56px 56px; animation: launch-sun .85s both; }
+#splash .logo { animation: launch-arrive .8s cubic-bezier(.2,.8,.2,1) both; }
+#splash .name { animation: launch-name .7s .12s both; }
+@keyframes launch-arrive { from { opacity: 0; transform: translateY(12px) scale(.78); } to { opacity: 1; transform: none; } }
+@keyframes launch-name { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+@keyframes launch-draw { to { stroke-dashoffset: 0; } }
+@keyframes launch-heartbeat { 0% { opacity: 0; transform: scale(.85); } 40% { opacity: 1; transform: scale(1.07); } 70% { transform: scale(.96); } 100% { transform: scale(1); } }
+@keyframes launch-scan { from { transform: rotate(-160deg); opacity: 0; } to { transform: rotate(0); opacity: 1; } }
+@keyframes launch-sun { from { transform: rotate(-35deg) scale(.65); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes launch-coin { from { opacity: 0; transform: rotateY(-75deg) scale(.8); } to { opacity: 1; transform: none; } }
+@keyframes launch-bar { from { transform: scaleY(.15); } to { transform: scaleY(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .app-launch { display: none; }
+  .app-launch *, #splash .logo, #splash .name { animation: none !important; }
+}

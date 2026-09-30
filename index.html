@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>LuzYa — Precio de la luz por horas</title>
 
 <!-- Icono / "Añadir a pantalla de inicio" -->
@@ -22,7 +22,8 @@
     --bg-canvas:#F1F0FB;
     --text:#181428;
     --text-soft:#4B4763;
-    --text-faint:#8B87A3;
+    /* #8B87A3 daba 2.85:1 sobre el lienzo: por debajo del mínimo legible. */
+    --text-faint:#5F5B78;
 
     --glass: rgba(255,255,255,0.5);
     --glass-strong: rgba(255,255,255,0.7);
@@ -37,6 +38,10 @@
     --accent:#8B5CF6;
     --accent-ink:#ffffff;
     --accent-tint: rgba(139,92,246,0.14);
+    /* El violeta de marca vale como RELLENO y como adorno, pero de texto sobre
+       su propio tinte da 3.3:1. Token aparte para cuando hace de tinta. */
+    --accent-text:#6D28D9;
+    --pricey-text:#BE123C;
     --cheap:#0FBF95;
     --cheap-bg: rgba(15,191,149,0.16);
     --mid:#F5A623;
@@ -67,6 +72,8 @@
       --accent:#A78BFA;
       --accent-ink:#1a1030;
       --accent-tint: rgba(167,139,250,0.20);
+      --accent-text:#CDBDFE;
+      --pricey-text:#FFA3B0;
       --cheap:#2DD4BF;
       --cheap-bg: rgba(45,212,191,0.18);
       --mid:#FBBF24;
@@ -135,7 +142,7 @@
     width:38px;height:38px;border-radius:50%;
     background:var(--glass-strong);
     border:1px solid var(--glass-border);
-    color:var(--accent);
+    color:var(--accent-text);
     display:flex;align-items:center;justify-content:center;
     font-size:16px;cursor:pointer;
     transition:transform 0.25s var(--ease), opacity 0.2s;
@@ -245,7 +252,7 @@
   .empty, .loading, .error-msg{
     text-align:center;padding:40px 20px;color:var(--text-faint);font-size:14.5px;line-height:1.5;
   }
-  .error-msg{color:var(--pricey);}
+  .error-msg{color:var(--pricey-text);}
   .spinner{
     width:34px;height:34px;border-radius:50%;
     border:3px solid var(--glass-border); border-top-color:var(--accent);
@@ -266,7 +273,7 @@
     color:var(--text-faint);font-size:11px;font-weight:650;cursor:pointer;
     transition:background 0.25s var(--ease), color 0.25s;
   }
-  .tab-item.active{color:var(--accent);background:var(--accent-tint);}
+  .tab-item.active{color:var(--accent-text);background:var(--accent-tint);}
   .tab-item .ic{font-size:19px;line-height:1;}
   .tabview{display:none;}
   .tabview.active{display:block;}
@@ -297,6 +304,8 @@
   }
   .otra-app .oa-cerrar:hover{ color:var(--text-dim, var(--text-soft)); }
 </style>
+<link rel="stylesheet" href="mobile-app.css?v=20260930-1">
+<script src="mobile-app.js?v=20260930-1" data-app="luzya" defer></script>
 </head>
 <body>
 <div class="bg-mesh" aria-hidden="true"></div>
