@@ -2,6 +2,41 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<style data-launch-style="20260930-3">html.app-launch-pending{background:var(--bg,var(--bg-primary,var(--launch-boot-bg)))}
+html.app-launch-pending::before{content:"";position:fixed;inset:0;z-index:2147482999;pointer-events:none;background:var(--bg,var(--bg-primary,var(--launch-boot-bg)))}
+html.app-launch-pending body>:not(.app-launch):not(#splash){visibility:hidden!important}
+html.app-launch-pending .app-launch,html.app-launch-pending #splash{visibility:visible}
+</style>
+<script data-launch-boot="luzya">/* Se integra en el head, antes de cualquier CSS/JS remoto: evita mostrar la app a medio pintar. */
+(() => {
+  const app = document.currentScript.dataset.launchBoot;
+  const root = document.documentElement;
+  if (!app || app === 'neto' || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  try {
+    const last = Number(sessionStorage.getItem('app-launch-' + app));
+    if (last && Date.now() - last < 20000) return;
+  } catch {}
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  const backgrounds = {
+    pulso:['#0c1319','#0c1319'],radar:['#121923','#f4f4f0'],
+    whale:['#000','#f2f2f7'],bite:['#000','#f2f2f7'],
+    gasoya:['#000','#f2f2f7'],luzya:['#000','#f2f2f7'],
+    calendario:['#000','#f2f2f7'],celaje:['#111827','#f7f9fc'],
+    ayudaya:['#081d16','#f3f8f5'],panel:['#000','#f2f2f7'],condufy:['#000','#fff']
+  };
+  root.style.setProperty('--launch-boot-bg',(backgrounds[app] || ['#111','#fff'])[dark?0:1]);
+  root.classList.add('app-launch-pending');
+  root.dataset.launchPending = app;
+  // Si falla el recurso o su código, la web sigue siendo utilizable.
+  setTimeout(() => {
+    if (root.dataset.launchPending === app) {
+      root.classList.remove('app-launch-pending');
+      root.dataset.launchPending = 'expired';
+    }
+  },6000);
+})();
+</script>
+
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>LuzYa — Precio de la luz por horas</title>
 
@@ -304,8 +339,8 @@
   }
   .otra-app .oa-cerrar:hover{ color:var(--text-dim, var(--text-soft)); }
 </style>
-<link rel="stylesheet" href="mobile-app.css?v=20260930-2">
-<script src="mobile-app.js?v=20260930-2" data-app="luzya" defer></script>
+<link rel="stylesheet" href="mobile-app.css?v=20260930-3">
+<script src="mobile-app.js?v=20260930-3" data-app="luzya" defer></script>
 </head>
 <body>
 <div class="bg-mesh" aria-hidden="true"></div>
